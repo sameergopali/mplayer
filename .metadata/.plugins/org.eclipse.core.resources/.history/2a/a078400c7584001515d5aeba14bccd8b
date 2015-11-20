@@ -1,0 +1,147 @@
+package com.example.mplayer;
+
+import java.io.IOException;
+import java.util.ArrayList;
+
+import android.app.Activity;
+import android.content.ContentResolver;
+import android.database.Cursor;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.Toast;
+
+
+public class MainActivity extends Activity {
+    private ListView list;
+    private ArrayList<String>songname=new ArrayList<String>();
+    private ArrayList<String>songpath= new ArrayList<String>();
+    private MediaPlayer meplayer;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getSonglist();
+      
+        String[] values = new String[] { "Android List View", 
+                "Adapter implementation",
+                "Simple List View In Android",
+                "Create List View Android", 
+                "Android Example", 
+                "List View Source Code", 
+                "List View Array Adapter", 
+                "Android Example List View" 
+               };
+
+       
+        setContentView(R.layout.activity_main);
+        list=(ListView)findViewById(R.id.list);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1, android.R.id.text1,songpath);
+        list.setOnItemClickListener(new OnItemClickListener() {
+       
+		
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				// TODO Auto-generated method stub
+				  int itemPosition     = position;
+				   String  itemValue    = (String) list.getItemAtPosition(position);
+				    Toast.makeText(getApplicationContext(),
+		                      "Position :"+itemPosition+"  ListItem : " +itemValue , Toast.LENGTH_LONG)
+		                      .show();
+				    
+						
+					if(meplayer.isPlaying()){
+						meplayer.stop();
+						meplayer.release();
+						meplayer=null;
+					}
+					  meplayer=new MediaPlayer();
+					try {
+						meplayer.setDataSource(songpath.get(itemPosition));
+					} catch (IllegalArgumentException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (SecurityException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IllegalStateException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+			try {
+				meplayer.prepare();
+			} catch (IllegalStateException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+					meplayer.start();
+				
+			}});
+        list.setAdapter(adapter); 
+        
+    }
+
+    private void getSonglist() {
+		// TODO Auto-generated method stub
+	ContentResolver musicResolver= getContentResolver();
+	Uri musicuri= android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+	Cursor musicCursor = musicResolver.query(musicuri, null, null, null, null);
+    	
+	if(musicCursor!=null && musicCursor.moveToFirst()){
+		  //get columns
+		  int titleColumn = musicCursor.getColumnIndex
+		    (android.provider.MediaStore.Audio.Media.TITLE);
+		  int idColumn = musicCursor.getColumnIndex
+		    (android.provider.MediaStore.Audio.Media._ID);
+		  int artistColumn = musicCursor.getColumnIndex
+		    (android.provider.MediaStore.Audio.Media.ARTIST);
+		  int pathcolumn = musicCursor.getColumnIndex(android.provider.MediaStore.Audio.Media.DATA);
+		  //add songs to list
+	
+		  do {
+		    long thisId = musicCursor.getLong(idColumn);
+		    String thisTitle = musicCursor.getString(titleColumn);
+		    String thisArtist = musicCursor.getString(artistColumn);
+		    String path= musicCursor.getString(pathcolumn);
+		    songname.add(thisTitle);
+		     songpath.add(path); 
+		  }
+		  while (musicCursor.moveToNext());
+		}
+	
+    }
+
+	@Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        if (id == R.id.action_settings) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+}

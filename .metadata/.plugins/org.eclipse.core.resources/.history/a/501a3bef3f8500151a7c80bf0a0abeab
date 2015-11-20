@@ -1,0 +1,180 @@
+package com.example.mplayer;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.audiofx.Equalizer;
+import android.media.audiofx.Visualizer;
+import android.os.Bundle;
+import android.os.Environment;
+import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.View.OnTouchListener;
+import android.widget.Toast;
+
+public class visualizerActivity extends Activity{
+	private MediaPlayer player;
+	private Visualizer visualizer;
+	private VisualizerView mVisualizerView;
+	 private String  path;
+	 
+	 GestureDetector gestureDetector;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.visualizerview_main);
+		gestureDetector = new GestureDetector(this, new GestureListener());
+		mVisualizerView = (VisualizerView) findViewById(R.id.myvisualizerview);
+		mVisualizerView.setOnTouchListener(new OnTouchListener() {
+			
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				// TODO Auto-generated method stub
+				
+			          return gestureDetector.onTouchEvent(event);
+			     
+			}
+		});
+		Bundle extras =getIntent().getExtras();
+		if(extras!=null){
+		  path = extras.getString("path");
+		 
+		}
+		initAudio();
+	     
+	}
+	
+	@Override
+	protected void onPause(){
+		super.onPause();
+		if(isFinishing()&& player!=null){
+			visualizer.release();
+			player.release();
+			player= null;
+			
+		}
+	}
+	  private void initAudio(){
+	    	 setVolumeControlStream(AudioManager.STREAM_MUSIC);
+	    	//
+	    	 player=new MediaPlayer();
+	    	 try {
+				player.setDataSource(path);
+			} catch (IllegalArgumentException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SecurityException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalStateException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	    	 try {
+				player.prepare();
+			} catch (IllegalStateException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	    			 
+	    	 
+	    	 
+	    	 setupVisualizerFxAndUI();
+	    	 visualizer.setEnabled(true);
+	    	 player.setOnCompletionListener(new MediaPlayer.OnCompletionListener(){
+	    		 public void onCompletion(MediaPlayer mediaPlayer){
+	    		   visualizer.setEnabled(false);
+	    		 }
+	    	    }
+	    	 
+	            );
+	    	 player.start();
+	    	 }
+	    	 
+	    	 
+	  private void setupVisualizerFxAndUI(){
+	    	Equalizer mEqualizer = new Equalizer(0, player.getAudioSessionId());
+	   
+	    	mEqualizer.setEnabled(false);
+	    	  visualizer =new Visualizer(player.getAudioSessionId());
+	    	  visualizer.setCaptureSize(Visualizer.getCaptureSizeRange()[1]);
+	    	 visualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
+				
+				@Override
+				public void onWaveFormDataCapture(Visualizer visualizer, byte[] waveform,
+						int samplingRate) {
+					// TODO Auto-generated method stub
+				  mVisualizerView.updateVisualizer(waveform);
+				  
+					
+				}
+				@Override
+				public void onFftDataCapture(Visualizer visualizer, byte[] fft,
+						int samplingRate) {
+					// TODO Auto-generated method stub
+					
+				}
+			},Visualizer.getMaxCaptureRate()/2,true,false) ;
+	    	 Log.d("Tag",String.valueOf(Visualizer.getMaxCaptureRate()));
+	  
+	    }
+	  public Bitmap takeScreenshot() {
+	   	   View rootView = findViewById(android.R.id.content).getRootView();
+	   	   rootView.setDrawingCacheEnabled(true);
+	   	   return rootView.getDrawingCache();
+	   	}
+	      public void saveBitmap(Bitmap bitmap) {
+	    	    File imagePath = new File(Environment.getExternalStorageDirectory() + "/screenshot.png");
+	    	    FileOutputStream fos;
+	    	    try {
+	    	        fos = new FileOutputStream(imagePath);
+	    	        bitmap.compress(CompressFormat.JPEG, 100, fos);
+	    	        fos.flush();
+	    	        fos.close();
+	    	    } catch (FileNotFoundException e) {
+	    	        Log.e("GREC", e.getMessage(), e);
+	    	    } catch (IOException e) {
+	    	        Log.e("GREC", e.getMessage(), e);
+	    	    }
+	    	}
+	      private class GestureListener extends GestureDetector.SimpleOnGestureListener {
+
+	          @Override
+	          public boolean onDown(MotionEvent e) {
+	              return true;
+	          }
+	          // event when double tap occurs
+	          @Override
+	          public boolean onDoubleTap(MotionEvent e) {
+	              float x = e.getX();
+	              float y = e.getY();
+
+	              Toast.makeText(getApplicationContext(),
+	                      "Position : double tap", Toast.LENGTH_LONG)
+	                      .show();
+	               
+	            /*  Bitmap bitmap = takeScreenshot();
+	              saveBitmap(bitmap);*/
+	              
+	              return true;
+	          }
+	          
+	      }
+
+}

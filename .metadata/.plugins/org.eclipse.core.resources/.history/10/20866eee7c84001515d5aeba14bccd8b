@@ -1,0 +1,76 @@
+package com.example.mplayer;
+
+import android.app.Activity;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.audiofx.Equalizer;
+import android.media.audiofx.Visualizer;
+import android.os.Bundle;
+import android.util.Log;
+
+public class visualizerActivity extends Activity{
+	private MediaPlayer player;
+	private Visualizer visualizer;
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		mVisualizerView = (VisualizerView) findViewById(R.id.myvisualizerview);
+		 initAudio();
+	}
+	
+	@Override
+	protected void onPause(){
+		super.onPause();
+		if(isFinishing()&& player!=null){
+			visualizer.release();
+			player.release();
+			player= null;
+			
+		}
+	}
+	  private void initAudio(){
+	    	 setVolumeControlStream(AudioManager.STREAM_MUSIC);
+	    	 player= MediaPlayer.create(this, R.raw.duck);
+	    	 
+	    	 setupVisualizerFxAndUI();
+	    	 visualizer.setEnabled(true);
+	    	 player.setOnCompletionListener(new MediaPlayer.OnCompletionListener(){
+	    		 public void onCompletion(MediaPlayer mediaPlayer){
+	    		   visualizer.setEnabled(false);
+	    		 }
+	    	    }
+	    	 
+	            );
+	    	 player.start();
+	    	 }
+	    	 
+	    	 
+	  private void setupVisualizerFxAndUI(){
+	    	Equalizer mEqualizer = new Equalizer(0, player.getAudioSessionId());
+	   
+	    	mEqualizer.setEnabled(false);
+	    	  visualizer =new Visualizer(player.getAudioSessionId());
+	    	  visualizer.setCaptureSize(Visualizer.getCaptureSizeRange()[1]);
+	    	 visualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
+				
+				@Override
+				public void onWaveFormDataCapture(Visualizer visualizer, byte[] waveform,
+						int samplingRate) {
+					// TODO Auto-generated method stub
+				  mVisualizerView.updateVisualizer(waveform);
+				  
+					
+				}
+				@Override
+				public void onFftDataCapture(Visualizer visualizer, byte[] fft,
+						int samplingRate) {
+					// TODO Auto-generated method stub
+					
+				}
+			},Visualizer.getMaxCaptureRate()/2,true,false) ;
+	    	 Log.d(Tag,String.valueOf(Visualizer.getMaxCaptureRate()));
+	  
+	    }
+
+}
